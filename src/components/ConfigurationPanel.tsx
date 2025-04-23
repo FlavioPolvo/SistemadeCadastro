@@ -57,6 +57,7 @@ interface Field {
   label: string;
   type: string;
   required: boolean;
+  options?: string[];
 }
 
 interface DatabaseConfig {

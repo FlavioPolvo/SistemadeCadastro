@@ -34,7 +34,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// Dados de exemplo para demonstração
 const mockProducts = [
   {
     id: "1",
@@ -99,31 +98,9 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    // Em uma implementação real, você buscaria os detalhes do produto do Supabase
-    // const fetchProductDetails = async () => {
-    //   try {
-    //     setLoading(true);
-    //     const { data, error } = await supabase
-    //       .from('products')
-    //       .select('*')
-    //       .eq('id', id)
-    //       .single();
-    //
-    //     if (error) throw error;
-    //     if (data) setProduct(data);
-    //   } catch (err) {
-    //     setError('Erro ao carregar os detalhes do produto');
-    //     console.error(err);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-    //
-    // fetchProductDetails();
-
-    // Simulação de busca de dados
     setLoading(true);
     setTimeout(() => {
       const foundProduct = mockProducts.find((p) => p.id === id);
@@ -137,25 +114,6 @@ const ProductDetail = () => {
   }, [id]);
 
   const handleDelete = () => {
-    // Em uma implementação real, você excluiria o produto do Supabase aqui
-    // const deleteProduct = async () => {
-    //   try {
-    //     const { error } = await supabase
-    //       .from('products')
-    //       .delete()
-    //       .eq('id', id);
-    //
-    //     if (error) throw error;
-    //     navigate('/product-list');
-    //   } catch (err) {
-    //     console.error(err);
-    //     setError('Erro ao excluir o produto');
-    //   }
-    // };
-    //
-    // deleteProduct();
-
-    // Simulação de exclusão
     navigate("/product-list");
   };
 
@@ -251,7 +209,6 @@ const ProductDetail = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Imagens do Produto */}
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>Imagens</CardTitle>
@@ -280,7 +237,6 @@ const ProductDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Detalhes do Produto */}
         <Card className="md:col-span-2">
           <CardHeader>
             <div className="flex justify-between items-start">
@@ -311,7 +267,6 @@ const ProductDetail = () => {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Informações Básicas */}
             <div>
               <h3 className="text-lg font-medium mb-3">Informações Básicas</h3>
               {product.ingredients && (
@@ -326,7 +281,6 @@ const ProductDetail = () => {
 
             <Separator />
 
-            {/* Informações de Origem */}
             <div>
               <h3 className="text-lg font-medium mb-3">
                 Informações de Origem
@@ -372,7 +326,6 @@ const ProductDetail = () => {
 
             <Separator />
 
-            {/* Informações Adicionais */}
             <div>
               <h3 className="text-lg font-medium mb-3">
                 Informações Adicionais
