@@ -21,6 +21,7 @@ import {
   Tag,
   Truck,
   FileText,
+  Save,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -33,6 +34,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const mockProducts = [
   {
@@ -99,13 +110,23 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [editedProduct, setEditedProduct] = useState<any | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setLoading(true);
+    // Verificar se há um parâmetro edit=true na URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const shouldEdit = searchParams.get("edit") === "true";
+
     setTimeout(() => {
       const foundProduct = mockProducts.find((p) => p.id === id);
       if (foundProduct) {
         setProduct(foundProduct);
+        setEditedProduct(foundProduct);
+        if (shouldEdit) {
+          setIsEditing(true);
+        }
       } else {
         setError("Produto não encontrado");
       }
@@ -114,7 +135,33 @@ const ProductDetail = () => {
   }, [id]);
 
   const handleDelete = () => {
-    navigate("/product-list");
+    navigate("/products");
+  };
+
+  const handleSaveChanges = async () => {
+    if (!editedProduct) return;
+
+    setIsSaving(true);
+
+    try {
+      // Em uma implementação real, você enviaria as alterações para o Supabase aqui
+      // const { error } = await supabase
+      //   .from('products')
+      //   .update(editedProduct)
+      //   .eq('id', editedProduct.id);
+      //
+      // if (error) throw error;
+
+      // Simulação de atualização
+      setTimeout(() => {
+        setProduct(editedProduct);
+        setIsEditing(false);
+        setIsSaving(false);
+      }, 1000);
+    } catch (error) {
+      console.error("Erro ao atualizar produto:", error);
+      setIsSaving(false);
+    }
   };
 
   if (loading) {
@@ -132,7 +179,7 @@ const ProductDetail = () => {
           <Button
             variant="outline"
             className="mr-2"
-            onClick={() => navigate("/product-list")}
+            onClick={() => navigate("/products")}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar para a lista
@@ -144,10 +191,11 @@ const ProductDetail = () => {
               <p className="text-destructive">
                 {error || "Produto não encontrado"}
               </p>
-              <Button
-                onClick={() => navigate("/product-list")}
-                className="mt-4"
-              >
+              <Button onClick={() => navigate("/")} className="mt-4 mr-2">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar para Home
+              </Button>
+              <Button onClick={() => navigate("/products")} className="mt-4">
                 Voltar para a lista de produtos
               </Button>
             </div>
@@ -164,7 +212,7 @@ const ProductDetail = () => {
           <Button
             variant="outline"
             className="mr-2"
-            onClick={() => navigate("/product-list")}
+            onClick={() => navigate("/products")}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
@@ -172,10 +220,7 @@ const ProductDetail = () => {
           <h1 className="text-2xl font-bold">Detalhes do Produto</h1>
         </div>
         <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => navigate(`/product-form?id=${product.id}`)}
-          >
+          <Button variant="outline" onClick={() => setIsEditing(true)}>
             <Pencil className="h-4 w-4 mr-2" />
             Editar
           </Button>
@@ -267,113 +312,286 @@ const ProductDetail = () => {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium mb-3">Informações Básicas</h3>
-              {product.ingredients && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                    Ingredientes
-                  </h4>
-                  <p>{product.ingredients}</p>
-                </div>
-              )}
-            </div>
-
-            <Separator />
-
-            <div>
-              <h3 className="text-lg font-medium mb-3">
-                Informações de Origem
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {product.manufacturer && (
-                  <div className="flex items-start">
-                    <Factory className="h-5 w-5 mr-2 text-muted-foreground" />
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">
-                        Fabricante
-                      </h4>
-                      <p>{product.manufacturer}</p>
+            {isEditing ? (
+              // Formulário de edição
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-3">
+                    Informações Básicas
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Título</Label>
+                      <Input
+                        id="title"
+                        value={editedProduct?.title || ""}
+                        onChange={(e) =>
+                          setEditedProduct({
+                            ...editedProduct,
+                            title: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="type">Tipo</Label>
+                      <Select
+                        value={editedProduct?.type || ""}
+                        onValueChange={(value) =>
+                          setEditedProduct({ ...editedProduct, type: value })
+                        }
+                      >
+                        <SelectTrigger id="type">
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alimento">Alimento</SelectItem>
+                          <SelectItem value="bebida">Bebida</SelectItem>
+                          <SelectItem value="cosmético">Cosmético</SelectItem>
+                          <SelectItem value="artesanato">Artesanato</SelectItem>
+                          <SelectItem value="outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                )}
 
-                {product.location && (
-                  <div className="flex items-start">
-                    <MapPin className="h-5 w-5 mr-2 text-muted-foreground" />
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">
-                        Local
-                      </h4>
-                      <p>{product.location}</p>
-                    </div>
-                  </div>
-                )}
-
-                {product.fair && (
-                  <div className="flex items-start">
-                    <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">
-                        Feira
-                      </h4>
-                      <p>{product.fair}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <h3 className="text-lg font-medium mb-3">
-                Informações Adicionais
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {product.variations && (
-                  <div className="flex items-start">
-                    <Tag className="h-5 w-5 mr-2 text-muted-foreground" />
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">
-                        Variações
-                      </h4>
-                      <p>{product.variations}</p>
-                    </div>
-                  </div>
-                )}
-
-                {product.exportOptions !== undefined && (
-                  <div className="flex items-start">
-                    <Truck className="h-5 w-5 mr-2 text-muted-foreground" />
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">
-                        Disponível para exportação
-                      </h4>
-                      <p>{product.exportOptions ? "Sim" : "Não"}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {product.observations && (
-                <div className="flex items-start">
-                  <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">
-                      Observações
-                    </h4>
-                    <p>{product.observations}</p>
+                  <div className="space-y-2 mb-4">
+                    <Label htmlFor="ingredients">Ingredientes</Label>
+                    <Textarea
+                      id="ingredients"
+                      value={editedProduct?.ingredients || ""}
+                      onChange={(e) =>
+                        setEditedProduct({
+                          ...editedProduct,
+                          ingredients: e.target.value,
+                        })
+                      }
+                      rows={3}
+                    />
                   </div>
                 </div>
-              )}
-            </div>
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">
+                    Informações de Origem
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="manufacturer">Fabricante</Label>
+                      <Input
+                        id="manufacturer"
+                        value={editedProduct?.manufacturer || ""}
+                        onChange={(e) =>
+                          setEditedProduct({
+                            ...editedProduct,
+                            manufacturer: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Local</Label>
+                      <Input
+                        id="location"
+                        value={editedProduct?.location || ""}
+                        onChange={(e) =>
+                          setEditedProduct({
+                            ...editedProduct,
+                            location: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="fair">Feira</Label>
+                      <Input
+                        id="fair"
+                        value={editedProduct?.fair || ""}
+                        onChange={(e) =>
+                          setEditedProduct({
+                            ...editedProduct,
+                            fair: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">
+                    Informações Adicionais
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="variations">Variações</Label>
+                      <Input
+                        id="variations"
+                        value={editedProduct?.variations || ""}
+                        onChange={(e) =>
+                          setEditedProduct({
+                            ...editedProduct,
+                            variations: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="seals">Selos</Label>
+                      <Input
+                        id="seals"
+                        value={editedProduct?.seals?.join(", ") || ""}
+                        onChange={(e) =>
+                          setEditedProduct({
+                            ...editedProduct,
+                            seals: e.target.value
+                              .split(",")
+                              .map((s) => s.trim()),
+                          })
+                        }
+                        placeholder="Separados por vírgula"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="observations">Observações</Label>
+                    <Textarea
+                      id="observations"
+                      value={editedProduct?.observations || ""}
+                      onChange={(e) =>
+                        setEditedProduct({
+                          ...editedProduct,
+                          observations: e.target.value,
+                        })
+                      }
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Visualização normal
+              <>
+                <div>
+                  <h3 className="text-lg font-medium mb-3">
+                    Informações Básicas
+                  </h3>
+                  {product.ingredients && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                        Ingredientes
+                      </h4>
+                      <p>{product.ingredients}</p>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">
+                    Informações de Origem
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {product.manufacturer && (
+                      <div className="flex items-start">
+                        <Factory className="h-5 w-5 mr-2 text-muted-foreground" />
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Fabricante
+                          </h4>
+                          <p>{product.manufacturer}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {product.location && (
+                      <div className="flex items-start">
+                        <MapPin className="h-5 w-5 mr-2 text-muted-foreground" />
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Local
+                          </h4>
+                          <p>{product.location}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {product.fair && (
+                      <div className="flex items-start">
+                        <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Feira
+                          </h4>
+                          <p>{product.fair}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">
+                    Informações Adicionais
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {product.variations && (
+                      <div className="flex items-start">
+                        <Tag className="h-5 w-5 mr-2 text-muted-foreground" />
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Variações
+                          </h4>
+                          <p>{product.variations}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {product.exportOptions !== undefined && (
+                      <div className="flex items-start">
+                        <Truck className="h-5 w-5 mr-2 text-muted-foreground" />
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Disponível para exportação
+                          </h4>
+                          <p>{product.exportOptions ? "Sim" : "Não"}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {product.observations && (
+                    <div className="flex items-start">
+                      <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          Observações
+                        </h4>
+                        <p>{product.observations}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </CardContent>
 
           <CardFooter className="border-t pt-6">
             <Button
               variant="outline"
-              onClick={() => navigate("/product-list")}
+              onClick={() => navigate("/")}
+              className="mr-2"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar para Home
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/products")}
               className="mr-2"
             >
               Voltar para a lista
@@ -381,7 +599,9 @@ const ProductDetail = () => {
             {!isEditing ? (
               <Button onClick={() => setIsEditing(true)}>Editar Produto</Button>
             ) : (
-              <Button onClick={handleSaveChanges}>Salvar Alterações</Button>
+              <Button onClick={handleSaveChanges} disabled={isSaving}>
+                {isSaving ? "Salvando..." : "Salvar Alterações"}
+              </Button>
             )}
           </CardFooter>
         </Card>

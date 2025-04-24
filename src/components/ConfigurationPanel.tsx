@@ -134,7 +134,7 @@ const ConfigurationPanel = () => {
 
   // Configurações de armazenamento
   const [storageConfig, setStorageConfig] = useState<StorageConfig>({
-    bucketName: "product-images",
+    bucketName: "produtos",
     imagePath: "uploads/products",
     maxFileSize: 5,
     allowedTypes: ["image/jpeg", "image/png", "image/webp"],

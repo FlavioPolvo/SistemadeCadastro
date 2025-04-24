@@ -71,7 +71,7 @@ const Home = () => {
               </p>
             </CardContent>
             <CardFooter>
-              <Link to="/product-list" className="w-full">
+              <Link to="/products" className="w-full">
                 <Button className="w-full">Acessar Consulta</Button>
               </Link>
             </CardFooter>

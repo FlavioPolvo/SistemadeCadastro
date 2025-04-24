@@ -46,7 +46,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Eye, Pencil, Trash2, Search, Filter } from "lucide-react";
 
-// Dados de exemplo para demonstração
 const mockProducts = [
   {
     id: "1",
@@ -99,7 +98,6 @@ const ProductList = () => {
   const [itemsPerPage] = useState(5);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
-  // Em uma implementação real, você buscaria os produtos do Supabase aqui
   useEffect(() => {
     // Simulação de busca de dados
     // const fetchProducts = async () => {
@@ -114,7 +112,6 @@ const ProductList = () => {
     // fetchProducts();
   }, []);
 
-  // Filtragem de produtos
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.title
       .toLowerCase()
@@ -125,7 +122,6 @@ const ProductList = () => {
     return matchesSearch && matchesType;
   });
 
-  // Paginação
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredProducts.slice(
@@ -180,7 +176,6 @@ const ProductList = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Filtros */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-grow">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -209,14 +204,13 @@ const ProductList = () => {
               </Select>
             </div>
             <Button
-              onClick={() => navigate("/product-form")}
+              onClick={() => navigate("/products/new")}
               className="whitespace-nowrap"
             >
               Novo Produto
             </Button>
           </div>
 
-          {/* Tabela de Produtos */}
           {currentItems.length > 0 ? (
             <div className="border rounded-md">
               <Table>
@@ -333,7 +327,6 @@ const ProductList = () => {
             </div>
           )}
 
-          {/* Paginação */}
           {filteredProducts.length > itemsPerPage && (
             <Pagination className="mt-4">
               <PaginationContent>
