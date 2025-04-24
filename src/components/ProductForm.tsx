@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -33,11 +33,7 @@ import {
 import { Label } from "./ui/label";
 import { AspectRatio } from "./ui/aspect-ratio";
 import { X, Upload, Image as ImageIcon, ArrowLeft } from "lucide-react";
-
-// Inicializa o cliente Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import supabase from "@/lib/supabase";
 
 // Schema de validação do formulário
 const formSchema = z.object({
@@ -57,6 +53,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const ProductForm = () => {
+  const navigate = useNavigate();
   const [images, setImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -110,6 +107,11 @@ const ProductForm = () => {
     setSubmitSuccess(false);
 
     try {
+      // Converter string de selos para array
+      const sealsArray = data.seals
+        ? data.seals.split(",").map((seal) => seal.trim())
+        : [];
+
       // 1. Inserir dados do produto na tabela products
       const { data: productData, error: productError } = await supabase
         .from("products")
@@ -120,8 +122,8 @@ const ProductForm = () => {
             ingredients: data.ingredients,
             manufacturer: data.manufacturer,
             location: data.location,
-            fair: data.fair,
-            seals: data.seals,
+            // fair: data.fair, // Removido pois a coluna não existe no banco
+            seals: sealsArray,
             variations: data.variations,
             observations: data.observations,
           },
@@ -142,7 +144,7 @@ const ProductForm = () => {
 
           // Upload da imagem para o storage
           const { error: uploadError } = await supabase.storage
-            .from("product-images")
+            .from("produtos")
             .upload(filePath, file);
 
           if (uploadError) throw uploadError;
@@ -167,10 +169,15 @@ const ProductForm = () => {
       setImages([]);
       setImageUrls([]);
       setSubmitSuccess(true);
-    } catch (error) {
+
+      // Redirecionar para a lista de produtos após 2 segundos
+      setTimeout(() => {
+        navigate("/products");
+      }, 2000);
+    } catch (error: any) {
       console.error("Erro ao cadastrar produto:", error);
       setSubmitError(
-        "Ocorreu um erro ao cadastrar o produto. Tente novamente.",
+        `Ocorreu um erro ao cadastrar o produto: ${error.message || "Tente novamente"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -178,261 +185,285 @@ const ProductForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>Cadastro de Produto</CardTitle>
-        <CardDescription>
-          Preencha os dados do produto e faça upload das imagens (até 6
-          imagens).
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Título*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome do produto" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    <div className="container mx-auto p-6 bg-background">
+      <div className="flex items-center mb-6">
+        <Button
+          variant="outline"
+          className="mr-2"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar para Home
+        </Button>
+        <h1 className="text-2xl font-bold">Cadastro de Produto</h1>
+      </div>
 
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo*</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle>Cadastro de Produto</CardTitle>
+          <CardDescription>
+            Preencha os dados do produto e faça upload das imagens (até 6
+            imagens).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Título*</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
+                        <Input placeholder="Nome do produto" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="alimento">Alimento</SelectItem>
-                        <SelectItem value="bebida">Bebida</SelectItem>
-                        <SelectItem value="cosmético">Cosmético</SelectItem>
-                        <SelectItem value="artesanato">Artesanato</SelectItem>
-                        <SelectItem value="outro">Outro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="manufacturer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fabricante*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome do fabricante" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo*</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="alimento">Alimento</SelectItem>
+                          <SelectItem value="bebida">Bebida</SelectItem>
+                          <SelectItem value="cosmético">Cosmético</SelectItem>
+                          <SelectItem value="artesanato">Artesanato</SelectItem>
+                          <SelectItem value="outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Localização*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Cidade/Estado" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="manufacturer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fabricante*</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome do fabricante" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="fair"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Feira</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Nome da feira (opcional)"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Localização*</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Cidade/Estado" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="seals"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Selos</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Selos de qualidade (opcional)"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                <FormField
+                  control={form.control}
+                  name="fair"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Feira</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Nome da feira (opcional)"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="ingredients"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ingredientes</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Liste os ingredientes (opcional)"
-                      className="min-h-[80px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="variations"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Variações</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Descreva as variações disponíveis (opcional)"
-                      className="min-h-[80px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="observations"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Observações</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Observações adicionais (opcional)"
-                      className="min-h-[80px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="images">Imagens do Produto (até 6)</Label>
-                <div className="mt-2 flex items-center gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById("images")?.click()}
-                    disabled={images.length >= 6}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Selecionar Imagens
-                  </Button>
-                  <Input
-                    id="images"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleImageChange}
-                    disabled={images.length >= 6}
-                  />
-                  <p className="text-sm text-gray-500">
-                    {images.length} de 6 imagens selecionadas
-                  </p>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="seals"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Selos</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Selos separados por vírgula (ex: Orgânico, Vegano)"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Separe os selos por vírgula
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              {imageUrls.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {imageUrls.map((url, index) => (
-                    <div key={index} className="relative">
-                      <AspectRatio ratio={4 / 3} className="bg-muted">
-                        <img
-                          src={url}
-                          alt={`Preview ${index + 1}`}
-                          className="rounded-md object-cover w-full h-full"
-                        />
-                      </AspectRatio>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 h-6 w-6"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <FormField
+                control={form.control}
+                name="ingredients"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ingredientes</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Liste os ingredientes (opcional)"
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              {imageUrls.length === 0 && (
-                <div className="border-2 border-dashed border-gray-300 rounded-md p-12 text-center">
-                  <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <div className="mt-4 text-sm text-gray-500">
-                    Nenhuma imagem selecionada
+              <FormField
+                control={form.control}
+                name="variations"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Variações</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Descreva as variações disponíveis (opcional)"
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="observations"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Observações adicionais (opcional)"
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="images">Imagens do Produto (até 6)</Label>
+                  <div className="mt-2 flex items-center gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById("images")?.click()}
+                      disabled={images.length >= 6}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Selecionar Imagens
+                    </Button>
+                    <Input
+                      id="images"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleImageChange}
+                      disabled={images.length >= 6}
+                    />
+                    <p className="text-sm text-gray-500">
+                      {images.length} de 6 imagens selecionadas
+                    </p>
                   </div>
                 </div>
+
+                {imageUrls.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {imageUrls.map((url, index) => (
+                      <div key={index} className="relative">
+                        <AspectRatio ratio={4 / 3} className="bg-muted">
+                          <img
+                            src={url}
+                            alt={`Preview ${index + 1}`}
+                            className="rounded-md object-cover w-full h-full"
+                          />
+                        </AspectRatio>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {imageUrls.length === 0 && (
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-12 text-center">
+                    <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <div className="mt-4 text-sm text-gray-500">
+                      Nenhuma imagem selecionada
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                  {submitError}
+                </div>
               )}
-            </div>
 
-            {submitError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {submitError}
+              {submitSuccess && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+                  Produto cadastrado com sucesso! Redirecionando...
+                </div>
+              )}
+
+              <div className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/products")}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Cadastrando..." : "Cadastrar Produto"}
+                </Button>
               </div>
-            )}
-
-            {submitSuccess && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-                Produto cadastrado com sucesso!
-              </div>
-            )}
-
-            <div className="flex justify-end">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Cadastrando..." : "Cadastrar Produto"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

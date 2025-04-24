@@ -112,13 +112,26 @@ const ProductList = () => {
     // fetchProducts();
   }, []);
 
+  // Filtragem de produtos - busca em múltiplos campos
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.title
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter
-      ? product.type.toLowerCase() === typeFilter.toLowerCase()
-      : true;
+    // Busca em múltiplos campos
+    const matchesSearch =
+      searchTerm === "" ||
+      [
+        product.title,
+        product.type,
+        product.manufacturer,
+        product.location,
+        product.id?.toString(),
+      ].some((field) =>
+        field?.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+
+    const matchesType =
+      typeFilter === "" || typeFilter === "todos"
+        ? true
+        : product.type.toLowerCase() === typeFilter.toLowerCase();
+
     return matchesSearch && matchesType;
   });
 

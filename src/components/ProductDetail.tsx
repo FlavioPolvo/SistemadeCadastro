@@ -115,7 +115,6 @@ const ProductDetail = () => {
 
   useEffect(() => {
     setLoading(true);
-    // Verificar se há um parâmetro edit=true na URL
     const searchParams = new URLSearchParams(window.location.search);
     const shouldEdit = searchParams.get("edit") === "true";
 
@@ -144,22 +143,38 @@ const ProductDetail = () => {
     setIsSaving(true);
 
     try {
-      // Em uma implementação real, você enviaria as alterações para o Supabase aqui
-      // const { error } = await supabase
-      //   .from('products')
-      //   .update(editedProduct)
-      //   .eq('id', editedProduct.id);
-      //
-      // if (error) throw error;
+      const productToUpdate = {
+        title: editedProduct.title,
+        type: editedProduct.type,
+        ingredients: editedProduct.ingredients,
+        manufacturer: editedProduct.manufacturer,
+        location: editedProduct.location,
+        // fair: editedProduct.fair, // Removido pois a coluna não existe no banco
+        variations: editedProduct.variations,
+        observations: editedProduct.observations,
+      };
 
-      // Simulação de atualização
-      setTimeout(() => {
-        setProduct(editedProduct);
-        setIsEditing(false);
-        setIsSaving(false);
-      }, 1000);
-    } catch (error) {
+      if (typeof editedProduct.seals === "string") {
+        productToUpdate.seals = editedProduct.seals
+          .split(",")
+          .map((seal) => seal.trim());
+      } else {
+        productToUpdate.seals = editedProduct.seals;
+      }
+
+      const { error } = await supabase
+        .from("products")
+        .update(productToUpdate)
+        .eq("id", editedProduct.id);
+
+      if (error) throw error;
+
+      setProduct({ ...editedProduct, seals: productToUpdate.seals });
+      setIsEditing(false);
+    } catch (error: any) {
       console.error("Erro ao atualizar produto:", error);
+      alert(`Erro ao atualizar produto: ${error.message || "Tente novamente"}`);
+    } finally {
       setIsSaving(false);
     }
   };
@@ -313,7 +328,6 @@ const ProductDetail = () => {
 
           <CardContent className="space-y-6">
             {isEditing ? (
-              // Formulário de edição
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-medium mb-3">
@@ -471,7 +485,6 @@ const ProductDetail = () => {
                 </div>
               </div>
             ) : (
-              // Visualização normal
               <>
                 <div>
                   <h3 className="text-lg font-medium mb-3">
