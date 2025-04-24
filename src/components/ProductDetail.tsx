@@ -149,7 +149,7 @@ const ProductDetail = () => {
         ingredients: editedProduct.ingredients,
         manufacturer: editedProduct.manufacturer,
         location: editedProduct.location,
-        // fair: editedProduct.fair, // Removido pois a coluna não existe no banco
+        fair: editedProduct.fair,
         variations: editedProduct.variations,
         observations: editedProduct.observations,
       };
@@ -234,6 +234,33 @@ const ProductDetail = () => {
           </Button>
           <h1 className="text-2xl font-bold">Detalhes do Produto</h1>
         </div>
+        <Button
+          onClick={() => {
+            setLoading(true);
+            const fetchProduct = async () => {
+              try {
+                const { data, error } = await supabase
+                  .from("products")
+                  .select("*")
+                  .eq("id", id)
+                  .single();
+                if (error) throw error;
+                if (data) {
+                  setProduct({ ...product, ...data });
+                  setEditedProduct({ ...product, ...data });
+                }
+              } catch (error) {
+                console.error("Erro ao atualizar produto:", error);
+              } finally {
+                setLoading(false);
+              }
+            };
+            fetchProduct();
+          }}
+          variant="outline"
+        >
+          Atualizar Dados
+        </Button>
         <div className="flex space-x-2">
           <Button variant="outline" onClick={() => setIsEditing(true)}>
             <Pencil className="h-4 w-4 mr-2" />

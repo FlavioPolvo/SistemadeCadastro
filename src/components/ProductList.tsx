@@ -332,7 +332,7 @@ const ProductList = () => {
             <div className="text-center py-8 border rounded-md">
               <p className="text-muted-foreground">
                 Nenhum produto encontrado. Tente ajustar os filtros ou{" "}
-                <Link to="/product-form" className="text-primary underline">
+                <Link to="/products/new" className="text-primary underline">
                   cadastre um novo produto
                 </Link>
                 .

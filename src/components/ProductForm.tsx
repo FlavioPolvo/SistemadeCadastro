@@ -122,7 +122,7 @@ const ProductForm = () => {
             ingredients: data.ingredients,
             manufacturer: data.manufacturer,
             location: data.location,
-            // fair: data.fair, // Removido pois a coluna não existe no banco
+            fair: data.fair, // Campo fair reativado
             seals: sealsArray,
             variations: data.variations,
             observations: data.observations,
